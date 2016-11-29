@@ -1,0 +1,26 @@
+{
+  "name": "dynamodb-import",
+  "version": "1.0.0",
+  "description": "Fast DynamoDB Import",
+  "main": "import.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "dynamodb",
+    "import",
+    "fast",
+    "export",
+    "aws"
+  ],
+  "author": "Andrew Peebles",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.1.4",
+    "byline": "^5.0.0",
+    "consign": "^0.1.2",
+    "dynamodb": "^0.3.6",
+    "function-rate-limit": "^1.1.0",
+    "kafka-queue": "latest"
+  }
+}

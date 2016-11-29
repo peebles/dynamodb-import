@@ -1,0 +1,10 @@
+writer:
+  build: .
+  dockerfile: Dockerfile.writer
+  environment:
+    TABLE: TABLE_NAME
+    KAFKA: KAFKA_IP:9092
+    AWS_ACCESS_KEY: YOURS
+    AWS_ACCESS_SECRET: YOURS
+    DDB_ENDPOINT: dynamodb.REGION.amazonaws.com
+    WRITE_CAPACITY: 5
