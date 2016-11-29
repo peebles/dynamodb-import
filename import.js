@@ -1,7 +1,6 @@
 'use strict';
 let async = require( 'async' );
 let consign = require( 'consign' );
-let log = require( 'winston' );
 let byline = require( 'byline' );
 
 // --table --manifest --kafka --key-field
