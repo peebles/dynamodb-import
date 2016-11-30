@@ -39,7 +39,7 @@ sh ./launch-kafka.sh <name-of-table-to-import>
 ```
 
 Pass it one argument, the name of the table you are importing.  This table name will be the Kafka topic name.
-10 partitions are created, meaning you can run UP TO 10 instances of the "writer" we'll disucess in a minute.
+10 partitions are created, meaning you can run UP TO 10 instances of the "writer" we'll discuss in a minute.
 
 ### Edit the docker-compose.yml file.
 
@@ -91,5 +91,13 @@ per second total.  See the AWS ddb metrics to confirm.
 And you can keep upping this, so long as you do it with multiple of WRITE_CAPACITY, and as long as you do not exceed 10 instances
 of the writer ... because in "launch-kafka.sh" we hardcoded the number of partitions to 10.
 
+Well ... maybe.  Depends on how distributed is the hash key space in your table import data.  Kafka will keep a particular hash key
+to a single consumer.  If all of your import data contains records with an identical hash key, then even through you run 2 (or more)
+instances of the writer, only one writer will be consuming those records and writing them.  So basically, the fewer unique hash key
+values, the bigger you want WRITE_CAPACITY to be and to run fewer instances of the writer.  More unique hash key values, perhaps smaller
+WRITE_CAPACITY per writer instance, but more instances.
 
+Experimentally I've found that running more than about 250 ddb writes per second on a single t2.medium instance starts to generate
+EAI_AGAIN errors (dns lookup failures) and even though I have a write capacity of 400-500, I just can't do better than about 250/sec.
+However, if I launch a second t2.medium and run 200/sec on each ec2 machine, I can sustain 400/sec without errors.
 
