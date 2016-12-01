@@ -1,0 +1,8 @@
+{
+  "class": "KafkaQ",
+  "connection": {
+    "connectionString": "192.168.99.100:9092",
+    "keyField": "deviceId",
+    "groupId": "kafka-test-group"
+  }
+}

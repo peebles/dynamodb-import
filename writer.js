@@ -20,7 +20,7 @@ function application() {
 
   let args = {
     table: process.env.TABLE,
-    kafka: process.env.KAFKA,
+    config: process.env.CONFIG,
     'aws-access-key': process.env.AWS_ACCESS_KEY,
     'aws-access-secret': process.env.AWS_ACCESS_SECRET,
     'ddb-endpoint': process.env.DDB_ENDPOINT,
@@ -35,21 +35,17 @@ function application() {
     exit( new Error( 'Missing required AWS access key and/or secret' ) );
   }
 
-  if ( ! args[ 'kafka' ] ) {
-    exit( new Error( 'Missing required kafka:port' ) );
-  }
-
   if ( ! args[ 'ddb-endpoint' ] ) {
     exit( new Error( 'Missing required ddb-endpoint' ) );
   }
 
-  let Q = require( 'kafka-queue' )({
-    keyField: 'cameraId',
-    connectionString: args.kafka,
-    logger: {
-      logLevel: 1
-    }
-  });
+  if ( ! args[ 'config' ] ) {
+    exit( new Error( 'Missing required config' ) );
+  }
+
+  let config = require( args.config );
+  
+  let Q = require( 'cloud-queue2' )( config );
 
   ddb = require('dynamodb').ddb({
     accessKeyId: args[ 'aws-access-key' ],
@@ -65,9 +61,7 @@ function application() {
 
   let total = 0;
 
-  Q.consumer.connect( args.table, 'ddbimport', function( message, cb ) {
-    let handle = message.handle;
-    let msg = message.msg;
+  Q.consumer.connect( args.table, function( msg, cb ) {
     Object.keys( msg ).forEach( function( k ) {
       if ( typeof msg[k] == 'object' && !Array.isArray(msg[k]) )
 	msg[k] = JSON.stringify( msg[k] );
@@ -78,7 +72,7 @@ function application() {
 	cb( err );
       }
       else {
-	// console.log( 'put:', msg );
+	//console.log( 'put:', msg );
 	total += 1;
 	if ( ( total % 10000 ) == 0 ) {
 	  console.log( 'lifetime writes:', total );

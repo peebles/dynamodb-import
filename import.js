@@ -3,7 +3,7 @@ let async = require( 'async' );
 let consign = require( 'consign' );
 let byline = require( 'byline' );
 
-// --table --manifest --kafka --key-field
+// --table --manifest --config
 
 function exit( err ) {
   if ( err ) console.trace( err );
@@ -23,22 +23,14 @@ function application() {
     exit( new Error( 'Missing required manifest and table name arguments!' ) );
   }
 
-  if ( ! args[ 'kafka' ] ) {
-    exit( new Error( 'Missing required kafka IP address:port' ) );
+  if ( ! args[ 'config' ] ) {
+    exit( new Error( 'Missing required config' ) );
   }
-  
-  if ( ! args[ 'key-field' ] ) {
-    exit( new Error( 'Missing required key-field' ) );
-  }
-  
-  let Q = require( 'kafka-queue' )({
-    keyField: args[ 'key-field' ],
-    connectionString: args.kafka,
-    logger: {
-      logLevel: 1
-    }
-  });
 
+  let config = require( args.config );
+  
+  let Q = require( 'cloud-queue2' )( config );
+  
   let total = 0;
   Q.producer.connect( function( err ) {
     if ( err ) exit( err );

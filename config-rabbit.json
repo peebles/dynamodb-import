@@ -1,0 +1,6 @@
+{
+  "class": "RabbitMQ",
+  "connection": {
+    "url": "amqp://admin:secret@192.168.99.100"
+  }
+}

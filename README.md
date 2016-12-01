@@ -3,6 +3,8 @@
 Exporting tables from AWS DynamoDB to S3 is very fast, but importing them is super slow!  If you've
 found this project you know.
 
+Using this project, you can import at whatever write capacity you've programmed your DynamboDB table to.
+
 ## Quick Start
 
 ### Export your table into S3
@@ -16,10 +18,10 @@ mkdir data
 aws --profile <yours> s3 sync s3://<bucket>/path $(pwd)/data
 ```
 
-### Create an AWS Ec2 machine
+### Create an AWS EC2 machine
 
 ```bash
-./create-vm.sh -p <yours> -h <hostname> [-s security_group] [-v vpcid] [-i instance-type]
+./create-vm.sh -p <your-aws-profile> -h <hostname> [-s security_group] [-v vpcid] [-i instance-type]
 ```
 
 Edit the security group for this machine after its running.  Add an inbound rule: TCP port 9092 from ANYWHERE.
@@ -44,13 +46,18 @@ Pass it one argument, the name of the table you are importing.  This table name 
 ### Edit the docker-compose.yml file.
 
 Edit the "environment" section for your needs.  `TABLE`	should be the name of the table you are importing.
-`KAFKA` should be set to the IP address of the docker machine you launched, with a ":9092" after it.  The
-`AWS_ACCESS_*` variables should be set to your account creds.  `DDB_ENDPOINT` should be set to yours.  Seems
+Set `CONFIG` to "./config-kafka.json".
+The `AWS_ACCESS_*` variables should be set to your account creds.  `DDB_ENDPOINT` should be set to yours.  Seems
 like it needs to be "dynamodb.<your-region>.amazonaws.com" ... and by <your-region> I mean the region your
 dynambodb table exists.
 
 `WRITE_CAPACITY` should be set to the number of writes per second you have allocated to your ddb table you are
 importing.  The "writer" instance will try to get as close to that many writes per second that it can.
+
+### Edit config-kafka.json
+
+"connectionString" should be set to the IP address of the docker machine you launched, with a ":9092" after it.
+"keyField" should be set to the name of the ddb hash key field in the table you are importing.
 
 ### Fire the writer
 
@@ -65,11 +72,8 @@ and write the ddb records.
 ### Run the importer
 
 ```bash
-node importer.js --manifest data/manifest --table <name-of-table-to-import> --kafka <kafka-endpoint> --key-field <hash-key-field-name>
+node importer.js --manifest data/manifest --table <name-of-table-to-import> --config ./config-kafka.json
 ```
-
-For `kafka-endpoint` use the same value you editted in the docker-compose.yml file.  The `hash-key-field-name` should be the name
-of the field you use for the ddb hash key.  Kafka needs this for partitioning.
 
 At this point, the exported ddb table data from the S3 files you downloaded are being written to a Kafka queue.  The "writer" script
 is running in AWS and is consuming the Kafka queue and writing the table data into ddb.  Its writing WRITE_CAPACITY records per second.
@@ -100,4 +104,27 @@ WRITE_CAPACITY per writer instance, but more instances.
 Experimentally I've found that running more than about 250 ddb writes per second on a single t2.medium instance starts to generate
 EAI_AGAIN errors (dns lookup failures) and even though I have a write capacity of 400-500, I just can't do better than about 250/sec.
 However, if I launch a second t2.medium and run 200/sec on each ec2 machine, I can sustain 400/sec without errors.
+
+## RabbitMQ
+
+So if your hash key space is pretty sparse you might want to use RabbitMQ instead.
+
+Edit config-rabbit.json and change "url", using the IP address of the docker machine.  Then:
+
+```bash
+sh ./launch-rabbit.sh
+```
+
+Edit docker-compose.yml and change `CONFIG` to "./config-rabbit.json".  Launch the writer:
+
+```bash
+docker-compose build
+docker-compose up -d
+```
+
+And run the importer like this:
+
+```bash
+node importer.js --manifest data/manifest --table <name-of-table-to-import> --config ./config-rabbit.json
+```
 

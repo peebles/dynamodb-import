@@ -3,7 +3,7 @@ writer:
   dockerfile: Dockerfile.writer
   environment:
     TABLE: TABLE_NAME
-    KAFKA: KAFKA_IP:9092
+    CONFIG: ./config-kafka.json
     AWS_ACCESS_KEY: YOURS
     AWS_ACCESS_SECRET: YOURS
     DDB_ENDPOINT: dynamodb.REGION.amazonaws.com
